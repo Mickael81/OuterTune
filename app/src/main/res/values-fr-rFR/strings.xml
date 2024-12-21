@@ -351,52 +351,52 @@
     <string name="auto_playlist">Playlist automatique</string>
 
 <!-- Menu -->
-    <string name="select">Selection mode</string>
-    <string name="like_all">Like all</string>
+    <string name="select">Mode de sélection</string>
+    <string name="like_all">Tout liker</string>
 
 <!-- Sort menu -->
-    <string name="sort_by_date_modified">Date modified</string>
-    <string name="sort_by_date_released">Date released</string>
-    <string name="sort_by_like_date">Date liked</string>
+    <string name="sort_by_date_modified">Date de modification</string>
+    <string name="sort_by_date_released">Date de sortie</string>
+    <string name="sort_by_like_date">Date likée</string>
 
 <!-- Dialog -->
-    <string name="play_count">Play count</string>
+    <string name="play_count">Nombre de lectures</string>
 
 <!-- Settings -->
-    <string name="settings_debug">Debug</string>
-    <string name="logout">Logout</string>
+    <string name="settings_debug">Débogage</string>
+    <string name="logout">Déconnexion</string>
 
 <!-- Appearance settings -->
-    <string name="player_background_style">Player background style</string>
-    <string name="player_background_default">Follow theme</string>
-    <string name="player_background_gradient">Gradient</string>
-    <string name="player_background_blur">Blur</string>
-    <string name="new_interface">New interface layout</string>
-    <string name="show_liked_and_downloaded_playlist">Show liked and downloaded playlists in library</string>">
-    <string name="slim_navbar_title">Slim navbar</string>
-    <string name="slim_navbar_description">Remove text labels to reduce navbar height</string>
+    <string name="player_background_style">Style d'arrière-plan du lecteur</string>
+    <string name="player_background_default">Suivre le thème</string>
+    <string name="player_background_gradient">Dégradé</string>
+    <string name="player_background_blur">Flou</string>
+    <string name="new_interface">Nouvelle présentation de l'interface</string>
+    <string name="show_liked_and_downloaded_playlist">Afficher les playlists favorites et téléchargées dans la bibliothèque</string>">
+    <string name="slim_navbar_title">Barre de navigation fine</string>
+    <string name="slim_navbar_description">Supprimer les étiquettes de texte pour réduire la hauteur de la barre de navigation</string>
 
     <!-- Content settings -->
-    <string name="ytm_sync">Automatically sync with your YouTube Music account</string>
-    <string name="like_autodownload">Automatically download your liked songs</string>
-    <string name="wifi_only">Wifi only</string>
+    <string name="ytm_sync">Synchronisez automatiquement avec votre compte YouTube Music</string>
+    <string name="like_autodownload">Téléchargez automatiquement vos titres préférés</string>
+    <string name="wifi_only">Wifi uniquement</string>
 
     <!-- Player settings -->
-    <string name="keep_alive_title">Prevent system killing app</string>
-    <string name="keep_alive_description">Use a foreground notification to prevent OuterTune from being randomly closed by the system.</string>
+    <string name="keep_alive_title">Empêcher le système de tuer l'application</string>
+    <string name="keep_alive_description">Utiliser une notification de premier plan pour empêcher OuterTune d’être fermé de manière aléatoire par le système</string>
 
 <!--Lyrics settings -->
-    <string name="lyrics_settings_title">Lyrics</string>
-    <string name="lyrics_multiline_title">Read multiline lyrics</string>
-    <string name="lyrics_multiline_description">Treat all the lines between sync points as one lyric text</string>
-    <string name="lyrics_trim_title">Remove spaces around lyrics</string>
+    <string name="lyrics_settings_title">Paroles</string>
+    <string name="lyrics_multiline_title">Lire les paroles</string>
+    <string name="lyrics_multiline_description">Traitez toutes les lignes entre les points de synchronisation comme un seul texte lyrique</string>
+    <string name="lyrics_trim_title">Supprimer les espaces autour des paroles</string>
 
 <!-- Local player settings -->
-    <string name="local_library_enable_title">Enable Local Media</string>
-    <string name="local_library_enable_description">Disabling will hide local library from the app</string>
-    <string name="local_player_settings_title">Local Media</string>
-    <string name="flat_subfolders_title">Flatten subfolders</string>
-    <string name="flat_subfolders_description">Disable to preserve the file structure as on disk</string>
+    <string name="local_library_enable_title">Activer les médias locaux</string>
+    <string name="local_library_enable_description">La désactivation masquera la bibliothèque locale de l'application</string>
+    <string name="local_player_settings_title">Médias Locaux</string>
+    <string name="flat_subfolders_title">Aplatir les sous-dossiers</string>
+    <string name="flat_subfolders_description">Désactiver pour conserver la structure du fichier telle qu'elle se trouve sur le disque</string>
 
     <string name="import_innertune_tooltip">Restoring InnerTune backups are supported, albeit a possibility of anomalies due to technical limitations</string>
     <string name="import_m3u">Import a playlist (m3u)</string>

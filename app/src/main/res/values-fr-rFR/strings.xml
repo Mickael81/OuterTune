@@ -253,77 +253,77 @@
     <string name="small">Petit</string>
     <string name="big">Gros</string>
 
-    <string name="content">Content</string>
-    <string name="login">Login</string>
-    <string name="not_logged_in">Not logged in</string>
-    <string name="content_language">Default content language</string>
-    <string name="content_country">Default content country</string>
-    <string name="system_default">System default</string>
-    <string name="enable_proxy">Enable proxy</string>
-    <string name="proxy_type">Proxy type</string>
-    <string name="proxy_url">Proxy URL</string>
-    <string name="restart_to_take_effect">Restart to take effect</string>
+    <string name="content">Contenu</string>
+    <string name="login">Se connecter</string>
+    <string name="not_logged_in">Non connecté</string>
+    <string name="content_language">Langue de contenu par défaut</string>
+    <string name="content_country">Pays de contenu par défaut</string>
+    <string name="system_default">Système par défaut</string>
+    <string name="enable_proxy">Activer le proxy</string>
+    <string name="proxy_type">Type de proxy</string>
+    <string name="proxy_url">URL du proxy</string>
+    <string name="restart_to_take_effect">Redémarrer pour prendre effet</string>
 
-    <string name="player_and_audio">Player and audio</string>
-    <string name="audio_quality">Audio quality</string>
+    <string name="player_and_audio">Lecteur et Audio</string>
+    <string name="audio_quality">Qualité audio</string>
     <string name="audio_quality_auto">Auto</string>
-    <string name="audio_quality_high">High</string>
-    <string name="audio_quality_low">Low</string>
-    <string name="queue">Queue</string>
-    <string name="persistent_queue">Persistent queue</string>
+    <string name="audio_quality_high">Élevée</string>
+    <string name="audio_quality_low">Faible</string>
+    <string name="queue">File d'attente</string>
+    <string name="persistent_queue">File d'attente persistante</string>
 <!-- OuterTune: Keep this one below as is-->
-    <string name="persistent_queue_desc">Restore previous open queue(s) when the app starts</string>
-    <string name="auto_load_more">Auto load more songs</string>
-    <string name="auto_load_more_desc">Automatically add more songs when the end of the queue is reached, if possible</string>
-    <string name="skip_silence">Skip silence</string>
-    <string name="audio_normalization">Audio normalization</string>
-    <string name="auto_skip_next_on_error">Auto skip to next song when error occurs</string>
-    <string name="auto_skip_next_on_error_desc">Ensure your continuous playback experience</string>
-    <string name="stop_music_on_task_clear">Stop music on task clear</string>
-    <string name="equalizer">Equalizer</string>
+    <string name="persistent_queue_desc">Restaurer les files d'attente ouvertes précédemment au démarrage de l'application</string>
+    <string name="auto_load_more">Charger automatiquement plus de titres</string>
+    <string name="auto_load_more_desc">Ajouter automatiquement plus de chansons lorsque la fin de la file d'attente est atteinte, si possible</string>
+    <string name="skip_silence">Ignorer le silence</string>
+    <string name="audio_normalization">Normalisation audio</string>
+    <string name="auto_skip_next_on_error">Passer automatiquement au titre suivant en cas d'erreur</string>
+    <string name="auto_skip_next_on_error_desc">Assurez votre expérience de lecture continue</string>
+    <string name="stop_music_on_task_clear">Arrêter la musique lorsque la tâche est terminée</string>
+    <string name="equalizer">Égaliseur</string>
 
-    <string name="storage">Storage</string>
+    <string name="storage">Stockage</string>
     <string name="cache">Cache</string>
-    <string name="image_cache">Image Cache</string>
-    <string name="song_cache">Song Cache</string>
-    <string name="max_cache_size">Max cache size</string>
-    <string name="unlimited">Unlimited</string>
-    <string name="clear_all_downloads">Clear all downloads</string>
-    <string name="max_image_cache_size">Max image cache size</string>
-    <string name="clear_image_cache">Clear image cache</string>
-    <string name="max_song_cache_size">Max song cache size</string>
-    <string name="clear_song_cache">Clear song cache</string>
-    <string name="size_used">%s used</string>
+    <string name="image_cache">Cache d'images</string>
+    <string name="song_cache">Cache de chansons</string>
+    <string name="max_cache_size">Taille maximale du cache</string>
+    <string name="unlimited">Illimité</string>
+    <string name="clear_all_downloads">Effacer tous les téléchargements</string>
+    <string name="max_image_cache_size">Taille maximale du cache d'image</string>
+    <string name="clear_image_cache">Vider le cache d'images</string>
+    <string name="max_song_cache_size">Taille maximale du cache des chansons</string>
+    <string name="clear_song_cache">Vider le cache des chansons</string>
+    <string name="size_used">%s utilisés</string>
 
-    <string name="privacy">Privacy</string>
-    <string name="listen_history">Listen history</string>
-    <string name="pause_listen_history">Pause listen history</string>
-    <string name="clear_listen_history">Clear listen history</string>
-    <string name="clear_listen_history_confirm">Are you sure you want to clear all listen history?</string>
-    <string name="search_history">Search history</string>
-    <string name="pause_search_history">Pause search history</string>
-    <string name="clear_search_history">Clear search history</string>
-    <string name="clear_search_history_confirm">Are you sure you want to clear all search history?</string>
-    <string name="use_login_for_browse">Use login for browsing content</string>
-    <string name="use_login_for_browse_desc">This can influence what content you see and for example shows premium-only albums if you are logged in with a Premium account</string>
-    <string name="disable_screenshot">Disable screenshot</string>
-    <string name="disable_screenshot_desc">When this option is on, screenshots and the app\'s view in Recents are disabled.</string>
-    <string name="enable_lrclib">Enable LrcLib lyrics provider</string>
-    <string name="enable_kugou">Enable KuGou lyrics provider</string>
-    <string name="hide_explicit">Hide explicit content</string>
+    <string name="privacy">Confidentialité</string>
+    <string name="listen_history">Écouter l'historique</string>
+    <string name="pause_listen_history">Mettre en pause l'historique d'écoute</string>
+    <string name="clear_listen_history">Effacer l'historique d'écoute</string>
+    <string name="clear_listen_history_confirm">Êtes-vous sûr de vouloir effacer tout l’historique d’écoute ?</string>
+    <string name="search_history">Historique de recherche</string>
+    <string name="pause_search_history">Suspendre l'historique de recherche</string>
+    <string name="clear_search_history">Effacer l'historique de recherche</string>
+    <string name="clear_search_history_confirm">Êtes-vous sûr de vouloir effacer tout l’historique de recherche ?</string>
+    <string name="use_login_for_browse">Utiliser la connexion pour parcourir le contenu</string>
+    <string name="use_login_for_browse_desc">Cela peut influencer le contenu que vous voyez et, par exemple, afficher des albums uniquement premium si vous êtes connecté avec un compte Premium</string>
+    <string name="disable_screenshot">Désactiver la capture d'écran</string>
+    <string name="disable_screenshot_desc">Lorsque cette option est activée, les captures d'écran et l'affichage de l'application dans Récents sont désactivés</string>
+    <string name="enable_lrclib">Activer le fournisseur de paroles LrcLib</string>
+    <string name="enable_kugou">Activer le fournisseur de paroles de KuGou</string>
+    <string name="hide_explicit">Masquer le contenu explicite</string>
 
-    <string name="backup_restore">Backup and restore</string>
-    <string name="backup">Backup</string>
-    <string name="restore">Restore</string>
-    <string name="imported_playlist">Imported playlist</string>
-    <string name="backup_create_success">Backup created successfully</string>
-    <string name="backup_create_failed">Couldn\'t create backup</string>
-    <string name="restore_failed">Failed to restore backup</string>
+    <string name="backup_restore">Sauvegarde et Restauration</string>
+    <string name="backup">Sauvegarder</string>
+    <string name="restore">Restaurer</string>
+    <string name="imported_playlist">Playlist importée</string>
+    <string name="backup_create_success">Sauvegarde créée avec succès</string>
+    <string name="backup_create_failed">Impossible de créer une sauvegarde</string>
+    <string name="restore_failed">Impossible de restaurer la sauvegarde</string>
 
-    <string name="about">About</string>
-    <string name="app_version">App version</string>
+    <string name="about">À propos</string>
+    <string name="app_version">Version de l'application</string>
 
-    <string name="new_version_available">New version available</string>
+    <string name="new_version_available">Nouvelle version disponible</string>
 
 
 
@@ -331,24 +331,24 @@
 <!--OuterTune strings below-->
 
 <!-- Bottom navigation -->
-    <string name="folders">Folders</string>
-    <string name="library">Library</string>
+    <string name="folders">Dossiers</string>
+    <string name="library">Bibliothèque</string>
 
 <!-- Home -->
-    <string name="recent_activity">Recent activity</string>
+    <string name="recent_activity">Activité Récente</string>
 
 <!-- History screen-->
-    <string name="local_history">Local</string>
-    <string name="remote_history">Remote</string>
+    <string name="local_history">Locale</string>
+    <string name="remote_history">Historique</string>
 
 <!-- Library screens -->
 
 <!-- Queue -->
-    <string name="song_added_to_queue">\"%s\" added to queue</string>
-    <string name="create_queue">New queue</string>
+    <string name="song_added_to_queue">\"%s\" ajouté à la file d'attente</string>
+    <string name="create_queue">Nouvelle file d'attente</string>
 
 <!-- Playlist -->
-    <string name="auto_playlist">Auto playlist</string>
+    <string name="auto_playlist">Playlist automatique</string>
 
 <!-- Menu -->
     <string name="select">Selection mode</string>

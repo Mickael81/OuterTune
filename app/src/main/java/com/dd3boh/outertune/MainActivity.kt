@@ -58,6 +58,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.rememberTopAppBarState
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -73,6 +74,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -126,6 +128,8 @@ import com.dd3boh.outertune.constants.PauseSearchHistoryKey
 import com.dd3boh.outertune.constants.PlayerBackgroundStyleKey
 import com.dd3boh.outertune.constants.PureBlackKey
 import com.dd3boh.outertune.constants.ScanPathsKey
+import com.dd3boh.outertune.constants.ScannerImpl
+import com.dd3boh.outertune.constants.ScannerImplKey
 import com.dd3boh.outertune.constants.ScannerMatchCriteria
 import com.dd3boh.outertune.constants.ScannerSensitivityKey
 import com.dd3boh.outertune.constants.ScannerStrictExtKey
@@ -200,6 +204,7 @@ import com.dd3boh.outertune.ui.utils.appBarScrollBehavior
 import com.dd3boh.outertune.ui.utils.cacheDirectoryTree
 import com.dd3boh.outertune.ui.utils.getLocalThumbnail
 import com.dd3boh.outertune.ui.utils.resetHeightOffset
+import com.dd3boh.outertune.utils.ActivityLauncherHelper
 import com.dd3boh.outertune.utils.NetworkConnectivityObserver
 import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.dataStore
@@ -209,7 +214,7 @@ import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.utils.reportException
 import com.dd3boh.outertune.utils.scanners.LocalMediaScanner
-import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.unloadAdvancedScanner
+import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.destroyScanner
 import com.dd3boh.outertune.utils.scanners.ScannerAbortException
 import com.dd3boh.outertune.utils.urlEncode
 import com.valentinilk.shimmer.LocalShimmerTheme
@@ -235,6 +240,8 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var syncUtils: SyncUtils
+
+    lateinit var activityLauncher: ActivityLauncherHelper
 
     private var playerConnection by mutableStateOf<PlayerConnection?>(null)
     private val serviceConnection = object : ServiceConnection {
@@ -296,17 +303,18 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @SuppressLint(
         "UnusedMaterial3ScaffoldPaddingParameter", "CoroutineCreationDuringComposition",
-        "StateFlowValueCalledInComposition"
+        "StateFlowValueCalledInComposition", "UnusedBoxWithConstraintsScope"
     )
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
+        activityLauncher = ActivityLauncherHelper(this)
 
         setContent {
             val connectivityObserver = NetworkConnectivityObserver(this)
-            val isInternetConnected by connectivityObserver.networkStatus.collectAsState(false)
+            val isNetworkConnected by connectivityObserver.networkStatus.collectAsState(false)
 
             val enableDynamicTheme by rememberPreference(DynamicThemeKey, defaultValue = true)
             val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
@@ -363,11 +371,15 @@ class MainActivity : ComponentActivity() {
                 key = ScannerSensitivityKey,
                 defaultValue = ScannerMatchCriteria.LEVEL_2
             )
+            val (scannerImpl) = rememberEnumPreference(
+                key = ScannerImplKey,
+                defaultValue = ScannerImpl.TAGLIB
+            )
             val (scanPaths) = rememberPreference(ScanPathsKey, defaultValue = DEFAULT_SCAN_PATH)
             val (excludedScanPaths) = rememberPreference(ExcludedScanPathsKey, defaultValue = "")
             val (strictExtensions) = rememberPreference(ScannerStrictExtKey, defaultValue = false)
             val (lookupYtmArtists) = rememberPreference(LookupYtmArtistsKey, defaultValue = true)
-            val (autoScan) = rememberPreference(AutomaticScannerKey, defaultValue = true)
+            val (autoScan) = rememberPreference(AutomaticScannerKey, defaultValue = false)
             LaunchedEffect(Unit) {
                 downloadUtil.resumeDownloadsOnStart()
 
@@ -375,7 +387,7 @@ class MainActivity : ComponentActivity() {
                     // Check if the permissions for local media access
                     if (firstSetupPassed && localLibEnable && autoScan
                         && checkSelfPermission(MEDIA_PERMISSION_LEVEL) == PackageManager.PERMISSION_GRANTED) {
-                        val scanner = LocalMediaScanner.getScanner()
+                        val scanner = LocalMediaScanner.getScanner(this@MainActivity, scannerImpl)
 
                         // equivalent to (quick scan)
                         try {
@@ -413,7 +425,7 @@ class MainActivity : ComponentActivity() {
                                 Toast.LENGTH_LONG
                             ).show()
                         } finally {
-                            unloadAdvancedScanner()
+                            destroyScanner()
                         }
                         purgeCache() // juuuust to be sure
                         cacheDirectoryTree(null)
@@ -680,7 +692,7 @@ class MainActivity : ComponentActivity() {
                         LocalDownloadUtil provides downloadUtil,
                         LocalShimmerTheme provides ShimmerTheme,
                         LocalSyncUtils provides syncUtils,
-                        LocalIsInternetConnected provides isInternetConnected
+                        LocalIsNetworkConnected provides isNetworkConnected
                     ) {
                         Scaffold(
                             topBar = {
@@ -816,6 +828,36 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                 }
+
+                                if (BuildConfig.DEBUG) {
+                                    val debugColour = Color.Red
+                                    Column(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomEnd)
+                                            .offset(y = 100.dp)
+                                    ) {
+                                        Text(
+                                            text = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) | ${BuildConfig.FLAVOR}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = debugColour
+                                        )
+                                        Text(
+                                            text = "${BuildConfig.APPLICATION_ID} | ${BuildConfig.BUILD_TYPE}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = debugColour
+                                        )
+                                        Text(
+                                            text = "${Build.BRAND} ${Build.DEVICE} (${Build.MODEL})",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = debugColour
+                                        )
+                                        Text(
+                                            text = "${Build.VERSION.SDK_INT} (${Build.ID})",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = debugColour
+                                        )
+                                    }
+                                }
                             },
                             bottomBar = {
                                 Box() {
@@ -856,7 +898,7 @@ class MainActivity : ComponentActivity() {
                                                     )
                                                 }
                                             }
-                                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                                            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp))
                                     ) {
                                         navigationItems.fastForEach { screen ->
                                             NavigationBarItem(
@@ -1227,4 +1269,4 @@ val LocalPlayerConnection = staticCompositionLocalOf<PlayerConnection?> { error(
 val LocalPlayerAwareWindowInsets = compositionLocalOf<WindowInsets> { error("No WindowInsets provided") }
 val LocalDownloadUtil = staticCompositionLocalOf<DownloadUtil> { error("No DownloadUtil provided") }
 val LocalSyncUtils = staticCompositionLocalOf<SyncUtils> { error("No SyncUtils provided") }
-val LocalIsInternetConnected = staticCompositionLocalOf<Boolean> { error("No Network Status provided") }
+val LocalIsNetworkConnected = staticCompositionLocalOf<Boolean> { error("No Network Status provided") }

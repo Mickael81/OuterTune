@@ -42,6 +42,7 @@ val AudioQualityKey = stringPreferencesKey("audioQuality")
 enum class AudioQuality {
     AUTO, HIGH, LOW
 }
+val AudioOffload = booleanPreferencesKey("enableOffload")
 
 val PersistentQueueKey = booleanPreferencesKey("persistentQueue")
 val SkipSilenceKey = booleanPreferencesKey("skipSilence")
@@ -93,6 +94,7 @@ val LocalLibraryEnableKey = booleanPreferencesKey("localLibraryEnable")
  */
 val AutomaticScannerKey = booleanPreferencesKey("autoLocalScanner")
 val ScannerSensitivityKey = stringPreferencesKey("scannerSensitivity")
+val ScannerImplKey = stringPreferencesKey("scannerImpl")
 val ScannerStrictExtKey = booleanPreferencesKey("scannerStrictExt")
 val LookupYtmArtistsKey = booleanPreferencesKey("lookupYtmArtists")
 
@@ -100,6 +102,11 @@ val ScanPathsKey = stringPreferencesKey("scanPaths")
 val ExcludedScanPathsKey = stringPreferencesKey("excludedScanPaths")
 val LastLocalScanKey = longPreferencesKey("lastLocalScan")
 
+
+enum class ScannerImpl {
+    TAGLIB,
+    FFMPEG_EXT,
+}
 
 /**
  * Specify how strict the metadata scanner should be
@@ -158,7 +165,7 @@ enum class LibraryViewType {
 }
 
 enum class SongSortType {
-    CREATE_DATE, MODIFIED_DATE, RELEASE_DATE, NAME, ARTIST, PLAY_TIME
+    CREATE_DATE, MODIFIED_DATE, RELEASE_DATE, NAME, ARTIST, PLAY_TIME, PLAY_COUNT
 }
 
 enum class PlaylistSongSortType {

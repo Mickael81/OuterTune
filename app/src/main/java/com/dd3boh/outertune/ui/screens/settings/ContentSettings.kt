@@ -20,9 +20,17 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
+import androidx.datastore.preferences.core.edit
 import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
@@ -40,17 +48,22 @@ import com.dd3boh.outertune.constants.ProxyEnabledKey
 import com.dd3boh.outertune.constants.ProxyTypeKey
 import com.dd3boh.outertune.constants.ProxyUrlKey
 import com.dd3boh.outertune.constants.SYSTEM_DEFAULT
+import com.dd3boh.outertune.constants.VisitorDataKey
 import com.dd3boh.outertune.constants.YtmSyncKey
 import com.dd3boh.outertune.ui.component.EditTextPreference
 import com.dd3boh.outertune.ui.component.IconButton
+import com.dd3boh.outertune.ui.component.InfoLabel
 import com.dd3boh.outertune.ui.component.ListPreference
 import com.dd3boh.outertune.ui.component.PreferenceEntry
 import com.dd3boh.outertune.ui.component.PreferenceGroupTitle
 import com.dd3boh.outertune.ui.component.SwitchPreference
+import com.dd3boh.outertune.ui.component.TextFieldDialog
 import com.dd3boh.outertune.ui.utils.backToMain
+import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.zionhuang.innertube.utils.parseCookieString
+import kotlinx.coroutines.runBlocking
 import java.net.Proxy
 
 @SuppressLint("PrivateResource")
@@ -60,6 +73,8 @@ fun ContentSettings(
     navController: NavController,
     scrollBehavior: TopAppBarScrollBehavior,
 ) {
+    val context = LocalContext.current
+
     val accountName by rememberPreference(AccountNameKey, "")
     val accountEmail by rememberPreference(AccountEmailKey, "")
     val accountChannelHandle by rememberPreference(AccountChannelHandleKey, "")
@@ -76,6 +91,15 @@ fun ContentSettings(
     val (proxyType, onProxyTypeChange) = rememberEnumPreference(key = ProxyTypeKey, defaultValue = Proxy.Type.HTTP)
     val (proxyUrl, onProxyUrlChange) = rememberPreference(key = ProxyUrlKey, defaultValue = "host:port")
 
+
+    // temp vars
+    var showToken: Boolean by remember {
+        mutableStateOf(false)
+    }
+
+    var showTokenEditor by remember {
+        mutableStateOf(false)
+    }
 
     Column(
         Modifier
@@ -100,9 +124,63 @@ fun ContentSettings(
                 icon = { Icon(Icons.AutoMirrored.Rounded.Logout, null) },
                 onClick = {
                     onInnerTubeCookieChange("")
+                    runBlocking {
+                        context.dataStore.edit { settings ->
+                            settings.remove(InnerTubeCookieKey)
+                            settings.remove(VisitorDataKey)
+                        }
+                    }
                 }
             )
         }
+
+        if (showTokenEditor) {
+            TextFieldDialog(
+                modifier = Modifier,
+                initialTextFieldValue = TextFieldValue(innerTubeCookie),
+                onDone = { onInnerTubeCookieChange(it) },
+                onDismiss = { showTokenEditor = false },
+                singleLine = false,
+                maxLines = 20,
+                isInputValid = {
+                    it.isNotEmpty() &&
+                    try {
+                        "SAPISID" in parseCookieString(it)
+                        true
+                    } catch (e: Exception) {
+                        false
+                    }
+                },
+                extraContent = {
+                    InfoLabel(text = stringResource(R.string.token_adv_login_description))
+                }
+            )
+        }
+
+        PreferenceEntry(
+            title = {
+                if (showToken) {
+                    Text(stringResource(R.string.token_shown))
+                    Text(
+                        text = if (isLoggedIn) innerTubeCookie else stringResource(R.string.not_logged_in),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Light,
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 1 // just give a preview so user knows it's at least there
+                    )
+                } else {
+                    Text(stringResource(R.string.token_hidden))
+                }
+            },
+            onClick = {
+                if (showToken == false) {
+                    showToken = true
+                } else {
+                    showTokenEditor = true
+                }
+            },
+        )
+
         SwitchPreference(
             title = { Text(stringResource(R.string.ytm_sync)) },
             icon = { Icon(Icons.Rounded.Sync, null) },
@@ -115,7 +193,7 @@ fun ContentSettings(
             icon = { Icon(Icons.Rounded.Favorite, null) },
             values = listOf(LikedAutodownloadMode.OFF, LikedAutodownloadMode.ON, LikedAutodownloadMode.WIFI_ONLY),
             selectedValue = likedAutoDownload,
-            valueText = { when (it){
+            valueText = { when (it) {
                 LikedAutodownloadMode.OFF -> stringResource(androidx.compose.ui.R.string.state_off)
                 LikedAutodownloadMode.ON -> stringResource(androidx.compose.ui.R.string.state_on)
                 LikedAutodownloadMode.WIFI_ONLY -> stringResource(R.string.wifi_only)

@@ -118,6 +118,7 @@
     <string name="sort_by_song_count">Song count</string>
     <string name="sort_by_length">Length</string>
     <string name="sort_by_play_time">Play time</string>
+    <string name="sort_by_play_count">Play count</string>
     <string name="sort_by_custom">Custom order</string>
 
     <!-- Dialog -->
@@ -377,11 +378,17 @@
     <string name="slim_navbar_description">Remove text labels to reduce navbar height</string>
 
     <!-- Content settings -->
+
+    <string name="token_hidden">Tap to show token</string>
+    <string name="token_shown">Tap again to copy or edit</string>
+    <string name="token_adv_login_description">This is an ADVANCED login method. As an alternative to the web portal, you may directly enter or update your login token here. For example, this can speed up logging in on multiple devices. Please note that any invalid token formats the app fails to parse will not be accepted</string>
     <string name="ytm_sync">Automatically sync with your YouTube Music account</string>
     <string name="like_autodownload">Automatically download your liked songs</string>
     <string name="wifi_only">Wifi only</string>
 
     <!-- Player settings -->
+    <string name="audio_offload">Enable offload</string>
+    <string name="audio_offload_description">Use the offload audio path for audio playback. Disabling this may increase power usage but can be useful if you experience issues with audio playback or post processing</string>
     <string name="keep_alive_title">Prevent system killing app</string>
     <string name="keep_alive_description">Use a foreground notification to prevent OuterTune from being randomly closed by the system.</string>
 
@@ -392,9 +399,9 @@
     <string name="lyrics_trim_title">Remove spaces around lyrics</string>
 
 <!-- Local player settings -->
-    <string name="local_library_enable_title">Enable Local Media</string>
+    <string name="local_library_enable_title">Enable local media</string>
     <string name="local_library_enable_description">Disabling will hide local library from the app</string>
-    <string name="local_player_settings_title">Local Media</string>
+    <string name="local_player_settings_title">Local media</string>
     <string name="flat_subfolders_title">Flatten subfolders</string>
     <string name="flat_subfolders_description">Disable to preserve the file structure as on disk</string>
 
@@ -424,6 +431,11 @@
     <string name="scanner_sensitivity_L1">Match title</string>
     <string name="scanner_sensitivity_L2">Match title and artists</string>
     <string name="scanner_sensitivity_L3">Match title, artists, albums</string>
+
+    <string name="scanner_type_title">Metadata extractor</string>
+    <string name="scanner_type_taglib">Use integrated TagLib metadata extractor</string>
+    <string name="scanner_type_ffmpeg_ext">Use FFMpeg metadata extractor. Requires external package to be installed</string>
+
 
     <string name="scanner_variant_rescan">Rescan the entire library and reload all songs\' metadata</string>
     <string name="scanner_online_artist_linking">Try to link local files\' artists with ones on YouTube Music</string>

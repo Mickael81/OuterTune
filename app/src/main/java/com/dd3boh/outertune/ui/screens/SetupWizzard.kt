@@ -2,11 +2,9 @@ package com.dd3boh.outertune.ui.screens
 
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,11 +32,11 @@ import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.automirrored.rounded.NavigateBefore
 import androidx.compose.material.icons.automirrored.rounded.NavigateNext
+import androidx.compose.material.icons.rounded.Autorenew
 import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Lyrics
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.MusicVideo
 import androidx.compose.material.icons.rounded.NotInterested
 import androidx.compose.material.icons.rounded.Palette
@@ -71,7 +69,6 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -80,8 +77,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.navigation.NavController
@@ -90,6 +89,7 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AccountChannelHandleKey
 import com.dd3boh.outertune.constants.AccountEmailKey
 import com.dd3boh.outertune.constants.AccountNameKey
+import com.dd3boh.outertune.constants.AutomaticScannerKey
 import com.dd3boh.outertune.constants.DarkModeKey
 import com.dd3boh.outertune.constants.FirstSetupPassed
 import com.dd3boh.outertune.constants.InnerTubeCookieKey
@@ -106,10 +106,12 @@ import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.extensions.move
 import com.dd3boh.outertune.ui.component.ChipsLazyRow
 import com.dd3boh.outertune.ui.component.EnumListPreference
+import com.dd3boh.outertune.ui.component.InfoLabel
 import com.dd3boh.outertune.ui.component.PreferenceEntry
 import com.dd3boh.outertune.ui.component.SongListItem
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.SwitchPreference
+import com.dd3boh.outertune.ui.component.TextFieldDialog
 import com.dd3boh.outertune.ui.screens.settings.DarkMode
 import com.dd3boh.outertune.ui.screens.settings.NavigationTab
 import com.dd3boh.outertune.utils.decodeTabString
@@ -119,7 +121,6 @@ import com.zionhuang.innertube.utils.parseCookieString
 import kotlinx.coroutines.delay
 import java.time.LocalDateTime
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SetupWizard(
     navController: NavController,
@@ -147,8 +148,9 @@ fun SetupWizard(
     }
     val (ytmSync, onYtmSyncChange) = rememberPreference(LyricTrimKey, defaultValue = true)
 
-
+    // local media prefs
     val (localLibEnable, onLocalLibEnableChange) = rememberPreference(LocalLibraryEnableKey, defaultValue = true)
+    val (autoScan, onAutoScanChange) = rememberPreference(AutomaticScannerKey, defaultValue = false)
 
     var position by remember {
         mutableIntStateOf(0)
@@ -279,7 +281,11 @@ fun SetupWizard(
                             colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary, BlendMode.SrcIn),
                             modifier = Modifier
                                 .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceColorAtElevation(NavigationBarDefaults.Elevation))
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceColorAtElevation(
+                                        NavigationBarDefaults.Elevation
+                                    )
+                                )
                                 .clickable { }
                         )
                         Column(verticalArrangement = Arrangement.Center) {
@@ -588,27 +594,13 @@ fun SetupWizard(
                                 dummySongs.forEach { song ->
                                     SongListItem(
                                         song = song,
-                                        isActive = false,
-                                        isPlaying = false,
-                                        trailingContent = {
-                                            IconButton(
-                                                onClick = {}
-                                            ) {
-                                                Icon(
-                                                    Icons.Rounded.MoreVert,
-                                                    contentDescription = null
-                                                )
-                                            }
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .combinedClickable(
-                                                onClick = {
-                                                },
-                                                onLongClick = {
-                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                }
-                                            )
+                                        onPlay = {},
+                                        onSelectedChange = {},
+                                        inSelectMode = null,
+                                        isSelected = false,
+                                        navController = navController,
+                                        enableSwipeToQueue = false,
+                                        disableShowMenu = true
                                     )
                                 }
                             }
@@ -664,6 +656,14 @@ fun SetupWizard(
 
                     // account
                     2 -> {
+                        var showToken: Boolean by remember {
+                            mutableStateOf(false)
+                        }
+
+                        var showTokenEditor by remember {
+                            mutableStateOf(false)
+                        }
+
                         Text(
                             text = "Account",
                             style = MaterialTheme.typography.headlineLarge,
@@ -692,6 +692,51 @@ fun SetupWizard(
                                 }
                             )
                         }
+                        if (showTokenEditor) {
+                            TextFieldDialog(
+                                modifier = Modifier,
+                                initialTextFieldValue = TextFieldValue(innerTubeCookie),
+                                onDone = { onInnerTubeCookieChange(it) },
+                                onDismiss = { showTokenEditor = false },
+                                singleLine = false,
+                                maxLines = 20,
+                                isInputValid = {
+                                    it.isNotEmpty() &&
+                                            try {
+                                                "SAPISID" in parseCookieString(it)
+                                                true
+                                            } catch (e: Exception) {
+                                                false
+                                            }
+                                },
+                                extraContent = {
+                                    InfoLabel(text = stringResource(R.string.token_adv_login_description))
+                                }
+                            )
+                        }
+                        PreferenceEntry(
+                            title = {
+                                if (showToken) {
+                                    Text(stringResource(R.string.token_shown))
+                                    Text(
+                                        text = if (isLoggedIn) innerTubeCookie else stringResource(R.string.not_logged_in),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Light,
+                                        overflow = TextOverflow.Ellipsis,
+                                        maxLines = 1 // just give a preview so user knows it's at least there
+                                    )
+                                } else {
+                                    Text(stringResource(R.string.token_hidden))
+                                }
+                            },
+                            onClick = {
+                                if (showToken == false) {
+                                    showToken = true
+                                } else {
+                                    showTokenEditor = true
+                                }
+                            },
+                        )
                         SwitchPreference(
                             title = { Text(stringResource(R.string.ytm_sync)) },
                             icon = { Icon(Icons.Rounded.Lyrics, null) },
@@ -705,7 +750,7 @@ fun SetupWizard(
                     // local media
                     3 -> {
                         Text(
-                            text = "Local Media",
+                            text = "Local media",
                             style = MaterialTheme.typography.headlineLarge,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier
@@ -721,6 +766,17 @@ fun SetupWizard(
                             checked = localLibEnable,
                             onCheckedChange = onLocalLibEnableChange
                         )
+
+                        // automatic scanner
+                        SwitchPreference(
+                            title = { Text(stringResource(R.string.auto_scanner_title)) },
+                            description = stringResource(R.string.auto_scanner_description),
+                            icon = { Icon(Icons.Rounded.Autorenew, null) },
+                            checked = autoScan,
+                            onCheckedChange = onAutoScanChange,
+                            isEnabled = localLibEnable
+                        )
+
 
                         PreferenceEntry(
                             title = { Text("Click here to scan for songs") },

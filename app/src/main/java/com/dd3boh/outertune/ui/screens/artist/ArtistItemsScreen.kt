@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -50,6 +51,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
+import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
 import com.dd3boh.outertune.constants.GridThumbnailHeight
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.extensions.togglePlayPause
@@ -61,6 +63,7 @@ import com.dd3boh.outertune.ui.component.SelectHeader
 import com.dd3boh.outertune.ui.component.SwipeToQueueBox
 import com.dd3boh.outertune.ui.component.YouTubeGridItem
 import com.dd3boh.outertune.ui.component.YouTubeListItem
+import com.dd3boh.outertune.ui.component.shimmer.GridItemPlaceHolder
 import com.dd3boh.outertune.ui.component.shimmer.ListItemPlaceHolder
 import com.dd3boh.outertune.ui.component.shimmer.ShimmerHost
 import com.dd3boh.outertune.ui.menu.YouTubeAlbumMenu
@@ -88,6 +91,7 @@ fun ArtistItemsScreen(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val lazyListState = rememberLazyListState()
+    val lazyGridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
 
     val title by viewModel.title.collectAsState()
@@ -127,6 +131,15 @@ fun ArtistItemsScreen(
         }
     }
 
+    LaunchedEffect(lazyGridState) {
+        snapshotFlow {
+            lazyGridState.layoutInfo.visibleItemsInfo.any { it.key == "loading" }
+        }.collect { shouldLoadMore ->
+            if (!shouldLoadMore) return@collect
+            viewModel.loadMore()
+        }
+    }
+
     if (itemsPage == null) {
         ShimmerHost(
             modifier = Modifier.windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
@@ -138,30 +151,36 @@ fun ArtistItemsScreen(
     }
 
     if (itemsPage?.items?.firstOrNull() is SongItem) {
-        if (inSelectMode) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            ) {
-                SelectHeader(
-                    selectedItems = selection.mapNotNull { songId ->
-                        songIndex[songId]
-                    }.map { it.toMediaMetadata() },
-                    totalItemCount = selection.size,
-                    onSelectAll = {
-                        selection.clear()
-                        selection.addAll(itemsPage?.items?.map { it.id }.orEmpty())
-                    },
-                    onDeselectAll = { selection.clear() },
-                    menuState = menuState,
-                    onDismiss = onExitSelectionMode
-                )
-            }
-        }
         LazyColumn(
             state = lazyListState,
             contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
         ) {
+            item(
+                key = "header",
+                contentType = CONTENT_TYPE_HEADER
+            ) {
+                if (inSelectMode) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        SelectHeader(
+                            selectedItems = selection.mapNotNull { songId ->
+                                songIndex[songId]
+                            }.map { it.toMediaMetadata() },
+                            totalItemCount = selection.size,
+                            onSelectAll = {
+                                selection.clear()
+                                selection.addAll(itemsPage?.items?.map { it.id }.orEmpty())
+                            },
+                            onDeselectAll = { selection.clear() },
+                            menuState = menuState,
+                            onDismiss = onExitSelectionMode
+                        )
+                    }
+                }
+            }
+
             itemsIndexed(
                 items = itemsPage?.items?.filterIsInstance<SongItem>().orEmpty(),
                 key = { _, item -> item.hashCode() }
@@ -251,6 +270,7 @@ fun ArtistItemsScreen(
         }
     } else {
         LazyVerticalGrid(
+            state = lazyGridState,
             columns = GridCells.Adaptive(minSize = GridThumbnailHeight + 24.dp),
             contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
         ) {
@@ -315,6 +335,14 @@ fun ArtistItemsScreen(
                             }
                         ).animateItem()
                 )
+            }
+
+            if (itemsPage?.continuation != null) {
+                item(key = "loading") {
+                    ShimmerHost(Modifier.animateItem()) {
+                        GridItemPlaceHolder(fillMaxWidth = true)
+                    }
+                }
             }
         }
     }

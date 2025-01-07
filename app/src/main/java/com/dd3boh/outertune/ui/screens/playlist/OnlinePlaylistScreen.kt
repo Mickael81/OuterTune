@@ -400,7 +400,7 @@ fun OnlinePlaylistScreen(
 
                                         IconButton(
                                             onClick = {
-                                                playerConnection.addToQueue(
+                                                playerConnection.enqueueEnd(
                                                     items = songs.map { it.toMediaItem() }
                                                 )
                                             }
@@ -496,7 +496,9 @@ fun OnlinePlaylistScreen(
                                 modifier = Modifier.padding(horizontal = 16.dp)
                             ) {
                                 SelectHeader(
-                                    selectedItems = selection.map { songs[it] }.map { it.toMediaMetadata() },
+                                    selectedItems = selection.map {
+                                            songs[it]
+                                        }.map { it.toMediaMetadata() },
                                     totalItemCount = songs.size,
                                     onSelectAll = {
                                         selection.clear()

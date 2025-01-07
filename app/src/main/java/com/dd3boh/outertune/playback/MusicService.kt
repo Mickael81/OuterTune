@@ -42,6 +42,7 @@ import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.analytics.PlaybackStats
 import androidx.media3.exoplayer.analytics.PlaybackStatsListener
 import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioOffloadSupportProvider
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.SilenceSkippingAudioProcessor
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -53,6 +54,7 @@ import androidx.media3.session.SessionToken
 import com.dd3boh.outertune.MainActivity
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AudioNormalizationKey
+import com.dd3boh.outertune.constants.AudioOffload
 import com.dd3boh.outertune.constants.AudioQuality
 import com.dd3boh.outertune.constants.AudioQualityKey
 import com.dd3boh.outertune.constants.KeepAliveKey
@@ -80,12 +82,14 @@ import com.dd3boh.outertune.extensions.collectLatest
 import com.dd3boh.outertune.extensions.currentMetadata
 import com.dd3boh.outertune.extensions.findNextMediaItemById
 import com.dd3boh.outertune.extensions.metadata
+import com.dd3boh.outertune.extensions.setOffloadEnabled
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.lyrics.LyricsHelper
 import com.dd3boh.outertune.models.QueueBoard
 import com.dd3boh.outertune.models.isShuffleEnabled
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
+import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.playback.queues.Queue
 import com.dd3boh.outertune.playback.queues.YouTubeQueue
 import com.dd3boh.outertune.utils.CoilBitmapLoader
@@ -225,6 +229,8 @@ class MusicService : MediaLibraryService(),
             .build()
             .apply {
                 addListener(this@MusicService)
+
+                setOffloadEnabled(dataStore.get(AudioOffload, false))
 
                 // skip on error
                 addListener(object : Player.Listener {
@@ -512,7 +518,7 @@ class MusicService : MediaLibraryService(),
 //            println("-----------------------------")
 //            initialStatus.items.map { println(it.title) }
             if (initialStatus.items.isEmpty()) return@launch
-            queueBoard.add(
+            queueBoard.addQueue(
                 queueTitle?: "Queue",
                 initialStatus.items,
                 player = this@MusicService,
@@ -540,30 +546,31 @@ class MusicService : MediaLibraryService(),
         }
     }
 
-    fun playNext(items: List<MediaItem>) {
-        player.addMediaItems(if (player.mediaItemCount == 0) 0 else player.currentMediaItemIndex + 1, items)
-        player.prepare()
+    /**
+     * Add items to queue, right after current playing item
+     */
+    fun enqueueNext(items: List<MediaItem>) {
+        val currentQueue = queueBoard.getCurrentQueue()
+        if (currentQueue == null) {
+            if (items.isNotEmpty()) {
+                playQueue(
+                    ListQueue(
+                        title = items.first().mediaMetadata.title.toString(),
+                        items = items.mapNotNull { it.metadata }
+                    )
+                )
+            }
+        } else {
+            queueBoard.addSongsToQueue(currentQueue, player.currentMediaItemIndex + 1, items.mapNotNull { it.metadata }, this)
+        }
     }
 
-    fun addToQueue(items: List<MediaItem>) {
-        val currentQueue = queueBoard.getCurrentQueue()
-        queueBoard.add(
-            currentQueue?.title?: "Queue",
-            items.map { it.metadata },
-            player = this,
-            forceInsert = true,
-            delta = false
-        )
 
-        val pos = player.currentPosition
-        val newQueuePos = queueBoard.setCurrQueue(this@MusicService, autoSeek = false)
-        queueBoard.getCurrentQueue()?.let {
-            if (newQueuePos != null) {
-                player.seekTo(newQueuePos, pos)
-            }
-        }
-
-        player.prepare()
+    /**
+     * Add items to end of current queue
+     */
+    fun enqueueEnd(items: List<MediaItem>) {
+        queueBoard.enqueueEnd(items.mapNotNull { it.metadata }, this)
     }
 
     fun toggleLibrary() {
@@ -757,6 +764,7 @@ class MusicService : MediaLibraryService(),
                         SonicAudioProcessor()
                     )
                 )
+                .setAudioOffloadSupportProvider(DefaultAudioOffloadSupportProvider(context))
                 .build()
         }
     }

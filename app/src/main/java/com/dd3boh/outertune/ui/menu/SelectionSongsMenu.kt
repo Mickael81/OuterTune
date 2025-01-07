@@ -55,7 +55,7 @@ fun SelectionMediaMetadataMenu(
     onDismiss: () -> Unit,
     clearAction: () -> Unit,
     onRemoveFromHistory: (() -> Unit)? = null,
-){
+) {
     val context = LocalContext.current
     val database = LocalDatabase.current
     val downloadUtil = LocalDownloadUtil.current
@@ -104,7 +104,7 @@ fun SelectionMediaMetadataMenu(
     AddToQueueDialog(
         isVisible = showChooseQueueDialog,
         onAdd = { queueName ->
-            queueBoard.add(queueName, selection, playerConnection, forceInsert = true, delta = false)
+            queueBoard.addQueue(queueName, selection, playerConnection, forceInsert = true, delta = false)
             queueBoard.setCurrQueue(playerConnection)
         },
         onDismiss = {
@@ -173,7 +173,7 @@ fun SelectionMediaMetadataMenu(
             end = 8.dp,
             bottom = 8.dp + WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
         )
-    ){
+    ) {
         GridMenuItem(
             icon = R.drawable.play,
             title = R.string.play
@@ -193,7 +193,7 @@ fun SelectionMediaMetadataMenu(
             title = R.string.play_next,
         ) {
             onDismiss()
-            playerConnection.playNext(selection.map { it.toMediaItem() })
+            playerConnection.enqueueNext(selection.map { it.toMediaItem() })
             clearAction()
         }
 

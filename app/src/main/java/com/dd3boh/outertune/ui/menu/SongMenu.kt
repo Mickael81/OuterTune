@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.LibraryAdd
 import androidx.compose.material.icons.rounded.LibraryAddCheck
 import androidx.compose.material.icons.rounded.PlaylistRemove
@@ -42,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -51,6 +54,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.fastSumBy
 import androidx.media3.exoplayer.offline.DownloadService
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
@@ -60,6 +64,7 @@ import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListItemHeight
 import com.dd3boh.outertune.constants.ListThumbnailSize
+import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.db.entities.Event
 import com.dd3boh.outertune.db.entities.PlaylistSong
 import com.dd3boh.outertune.db.entities.Song
@@ -68,14 +73,16 @@ import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
 import com.dd3boh.outertune.playback.PlayerConnection.Companion.queueBoard
 import com.dd3boh.outertune.playback.queues.YouTubeQueue
+import com.dd3boh.outertune.ui.component.DetailsDialog
 import com.dd3boh.outertune.ui.component.DownloadGridMenu
 import com.dd3boh.outertune.ui.component.GridMenu
 import com.dd3boh.outertune.ui.component.GridMenuItem
 import com.dd3boh.outertune.ui.component.ListDialog
-import com.dd3boh.outertune.ui.component.SongListItem
+import com.dd3boh.outertune.ui.component.ListItem
 import com.dd3boh.outertune.ui.component.TextFieldDialog
+import com.dd3boh.outertune.utils.joinByBullet
+import com.dd3boh.outertune.utils.makeTimeString
 import com.zionhuang.innertube.YouTube
-import com.zionhuang.innertube.models.WatchEndpoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -91,11 +98,15 @@ fun SongMenu(
     val context = LocalContext.current
     val database = LocalDatabase.current
     val downloadUtil = LocalDownloadUtil.current
+    val clipboardManager = LocalClipboardManager.current
+
     val playerConnection = LocalPlayerConnection.current ?: return
     val songState = database.song(originalSong.id).collectAsState(initial = originalSong)
     val song = songState.value ?: originalSong
     val download by LocalDownloadUtil.current.getDownload(originalSong.id).collectAsState(initial = null)
     val coroutineScope = rememberCoroutineScope()
+
+    val currentFormat by playerConnection.currentFormat.collectAsState(initial = null)
 
     var showEditDialog by rememberSaveable {
         mutableStateOf(false)
@@ -127,9 +138,11 @@ fun SongMenu(
     AddToQueueDialog(
         isVisible = showChooseQueueDialog,
         onAdd = { queueName ->
-            queueBoard.add(queueName, listOf(song.toMediaMetadata()), playerConnection,
+            val shouldReload = queueBoard.addQueue(queueName, listOf(song.toMediaMetadata()), playerConnection,
                 forceInsert = true, delta = false)
-            queueBoard.setCurrQueue(playerConnection)
+            if (shouldReload) {
+                queueBoard.setCurrQueue(playerConnection)
+            }
         },
         onDismiss = {
             showChooseQueueDialog = false
@@ -203,9 +216,34 @@ fun SongMenu(
         }
     }
 
-    SongListItem(
-        song = song,
-        badges = {},
+    var showDetailsDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    if (showDetailsDialog) {
+        DetailsDialog(
+            mediaMetadata = song.toMediaMetadata(),
+            currentFormat = currentFormat,
+            currentPlayCount = song.playCount?.fastSumBy { it.count }?: 0,
+            volume = playerConnection.player.volume,
+            clipboardManager = clipboardManager,
+            setVisibility = {showDetailsDialog = it }
+        )
+    }
+
+    ListItem(
+        title = song.song.title,
+        subtitle = joinByBullet(
+            song.artists.joinToString { it.name },
+            makeTimeString(song.song.duration * 1000L)
+        ),
+        thumbnailContent = {
+            AsyncImage(
+                model = if (song.song.isLocal) song.song.localPath else song.song.thumbnailUrl,
+                contentDescription = null,
+                modifier = Modifier.size(ListThumbnailSize).clip(RoundedCornerShape(ThumbnailCornerRadius))
+            )
+        },
         trailingContent = {
             IconButton(
                 onClick = {
@@ -246,7 +284,7 @@ fun SongMenu(
             title = R.string.play_next
         ) {
             onDismiss()
-            playerConnection.playNext(song.toMediaItem())
+            playerConnection.enqueueNext(song.toMediaItem())
         }
         GridMenuItem(
             icon = Icons.Rounded.Edit,
@@ -340,6 +378,12 @@ fun SongMenu(
                 }
                 context.startActivity(Intent.createChooser(intent, null))
             }
+        GridMenuItem(
+            icon = Icons.Rounded.Info,
+            title = R.string.details
+        ) {
+            showDetailsDialog = true
+        }
         if (!song.song.isLocal) {
             if (song.song.inLibrary == null) {
                 GridMenuItem(

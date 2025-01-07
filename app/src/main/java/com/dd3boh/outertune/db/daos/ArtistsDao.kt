@@ -45,6 +45,9 @@ interface ArtistsDao {
     """)
     fun artist(id: String): Flow<Artist?>
 
+    @Query("SELECT * FROM artist WHERE id = :id")
+    fun artistById(id: String): ArtistEntity?
+
     @Query("SELECT * FROM artist WHERE name = :name")
     fun artistByName(name: String): ArtistEntity?
 
@@ -63,6 +66,7 @@ interface ArtistsDao {
     """)
     fun searchArtists(query: String, previewSize: Int = Int.MAX_VALUE): Flow<List<Artist>>
 
+    @Transaction
     @Query("SELECT song.* FROM song_artist_map JOIN song ON song_artist_map.songId = song.id WHERE song_artist_map.artistId IN (SELECT id FROM artist WHERE name LIKE '%' || :query || '%') LIMIT :previewSize")
     fun searchArtistSongs(query: String, previewSize: Int = Int.MAX_VALUE): Flow<List<Song>>
 
@@ -109,7 +113,7 @@ interface ArtistsDao {
             ArtistSortType.PLAY_TIME -> "SUM(totalPlayTime) ASC"
         }
 
-        val where = when (filter){
+        val where = when (filter) {
             ArtistFilter.DOWNLOADED -> "song.dateDownload IS NOT NULL"
             ArtistFilter.LIBRARY -> "song.inLibrary IS NOT NULL"
             ArtistFilter.LIKED -> "artist.bookmarkedAt IS NOT NULL"
@@ -146,12 +150,15 @@ interface ArtistsDao {
     // endregion
 
     // region Artist Songs Sort
+    @Transaction
     @Query("SELECT song.* FROM song_artist_map JOIN song ON song_artist_map.songId = song.id WHERE artistId = :artistId AND inLibrary IS NOT NULL ORDER BY inLibrary")
     fun artistSongsByCreateDateAsc(artistId: String): Flow<List<Song>>
 
+    @Transaction
     @Query("SELECT song.* FROM song_artist_map JOIN song ON song_artist_map.songId = song.id WHERE artistId = :artistId AND inLibrary IS NOT NULL ORDER BY title COLLATE NOCASE ASC")
     fun artistSongsByNameAsc(artistId: String): Flow<List<Song>>
 
+    @Transaction
     @Query("SELECT song.* FROM song_artist_map JOIN song ON song_artist_map.songId = song.id WHERE artistId = :artistId AND inLibrary IS NOT NULL ORDER BY totalPlayTime")
     fun artistSongsByPlayTimeAsc(artistId: String): Flow<List<Song>>
 
@@ -195,6 +202,17 @@ interface ArtistsDao {
     // region Deletes
     @Delete
     fun delete(artist: ArtistEntity)
+
+   @Query("""
+        DELETE FROM Artist
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM song_artist_map
+            WHERE song_artist_map.artistId = :artistId
+        )
+        AND id = :artistId
+    """)
+    fun safeDeleteArtist(artistId: String)
 
     @Transaction
     @Query("DELETE FROM artist WHERE isLocal = 1")

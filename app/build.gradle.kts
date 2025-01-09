@@ -19,8 +19,8 @@ android {
         applicationId = "com.dd3boh.outertune"
         minSdk = 24
         targetSdk = 35
-        versionCode = 31
-        versionName = "0.7.0-alpha2"
+        versionCode = 32
+        versionName = "0.7.0-beta2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -173,5 +173,10 @@ dependencies {
 
     implementation(libs.timber)
 
-    implementation(libs.taglib)
+    /*
+    "JitPack builds are broken with the latest CMake version.
+    Please download the [aar](https://github.com/Kyant0/taglib/releases) manually but not use maven."
+     */
+//    implementation(libs.taglib)
+    implementation(files("../prebuilt/taglib_1.0.0.aar")) // prebuilt
 }

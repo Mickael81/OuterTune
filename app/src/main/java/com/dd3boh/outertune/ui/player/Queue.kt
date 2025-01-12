@@ -75,8 +75,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -131,6 +133,7 @@ fun Queue(
     var lockQueue by rememberPreference(LockQueueKey, defaultValue = false)
 
     val menuState = LocalMenuState.current
+    val haptic = LocalHapticFeedback.current
 
     // player vars
     val playerConnection = LocalPlayerConnection.current ?: return
@@ -173,7 +176,10 @@ fun Queue(
                             .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
                     )
             ) {
-                IconButton(onClick = { state.expandSoft() }) {
+                IconButton(onClick = {
+                    state.expandSoft()
+                    haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                }) {
                     Icon(
                         imageVector = Icons.Rounded.ExpandLess,
                         tint = onBackgroundColor,
@@ -594,11 +600,15 @@ fun Queue(
                                     when (dismissValue) {
                                         SwipeToDismissBoxValue.StartToEnd -> {
                                             playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
+                                            queueBoard.removeCurrentQueueSong(currentItem.firstPeriodIndex, playerConnection.service)
+                                            haptic.performHapticFeedback(HapticFeedbackType.Confirm)
                                             return@rememberSwipeToDismissBoxState true
                                         }
 
                                         SwipeToDismissBoxValue.EndToStart -> {
                                             playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
+                                            queueBoard.removeCurrentQueueSong(currentItem.firstPeriodIndex, playerConnection.service)
+                                            haptic.performHapticFeedback(HapticFeedbackType.Confirm)
                                             return@rememberSwipeToDismissBoxState true
                                         }
 
@@ -610,6 +620,7 @@ fun Queue(
                             )
 
                             val onCheckedChange: (Boolean) -> Unit = {
+                                haptic.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
                                 if (it) {
                                     selectedItems.add(window.uid.hashCode())
                                 } else {
@@ -641,6 +652,7 @@ fun Queue(
                                                                 state.collapseSoft()
                                                             },
                                                         )
+                                                        haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
                                                     }
                                                 }
                                             ) {
@@ -759,6 +771,7 @@ fun Queue(
                             enabled = !landscape,
                             onClick = {
                                 multiqueueExpand = !multiqueueExpand
+                                haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
                             },
                             modifier = Modifier.padding(vertical = 6.dp)
                         )
@@ -805,7 +818,10 @@ fun Queue(
                                 .padding(4.dp)
                                 .alpha(if (shuffleModeEnabled) 1f else 0.3f),
                             color = onBackgroundColor,
-                            onClick = { playerConnection.triggerShuffle() }
+                            onClick = {
+                                playerConnection.triggerShuffle()
+                                haptic.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                            }
                         )
                     }
 
@@ -817,7 +833,10 @@ fun Queue(
                                 .size(32.dp)
                                 .align(Alignment.Center),
                             color = onBackgroundColor,
-                            onClick = playerConnection.player::seekToPrevious
+                            onClick = {
+                                playerConnection.player.seekToPrevious()
+                                haptic.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                            }
                         )
                     }
 
@@ -837,6 +856,8 @@ fun Queue(
                                 } else {
                                     playerConnection.player.togglePlayPause()
                                 }
+                                // play/pause is slightly harder haptic
+                                haptic.performHapticFeedback(HapticFeedbackType.Confirm)
                             }
                         )
                     }
@@ -851,7 +872,10 @@ fun Queue(
                                 .size(32.dp)
                                 .align(Alignment.Center),
                             color = onBackgroundColor,
-                            onClick = playerConnection.player::seekToNext
+                            onClick = {
+                                playerConnection.player.seekToNext()
+                                haptic.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                            }
                         )
                     }
 
@@ -868,7 +892,10 @@ fun Queue(
                                 .padding(4.dp)
                                 .alpha(if (repeatMode == REPEAT_MODE_OFF) 0.3f else 1f),
                             color = onBackgroundColor,
-                            onClick = playerConnection.player::toggleRepeatMode
+                            onClick = {
+                                playerConnection.player.toggleRepeatMode()
+                                haptic.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                            }
                         )
                     }
                 }
@@ -916,6 +943,7 @@ fun Queue(
                             .fillMaxWidth()
                             .clickable {
                                 state.collapseSoft()
+                                haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
                             }
                             .windowInsetsPadding(
                                 WindowInsets.systemBars
@@ -962,6 +990,7 @@ fun Queue(
                     .align(Alignment.BottomCenter)
                     .clickable {
                         state.collapseSoft()
+                        haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
                     }
                     .windowInsetsPadding(
                         WindowInsets.systemBars

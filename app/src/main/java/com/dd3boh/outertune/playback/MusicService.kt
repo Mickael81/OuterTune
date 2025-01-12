@@ -387,6 +387,19 @@ class MusicService : MediaLibraryService(),
             }
         }
 
+        initQueue()
+        CoroutineScope(Dispatchers.Main).launch {
+            val queuePos = queueBoard.setCurrQueue(this@MusicService, false)
+            if (queuePos != null) {
+                player.seekTo(queuePos, dataStore.get(LastPosKey, C.TIME_UNSET))
+                dataStore.edit { settings ->
+                    settings[LastPosKey] = C.TIME_UNSET
+                }
+            }
+        }
+    }
+
+    fun initQueue() {
         if (dataStore.get(PersistentQueueKey, true)) {
             queueBoard = QueueBoard(database.readQueue().toMutableList())
             isShuffleEnabled.value = queueBoard.getCurrentQueue()?.shuffled ?: false
@@ -394,18 +407,23 @@ class MusicService : MediaLibraryService(),
                 val queue = queueBoard.getCurrentQueue()
                 if (queue != null) {
                     isShuffleEnabled.value = queue.shuffled
-                    CoroutineScope(Dispatchers.Main).launch {
-                        val queuePos = queueBoard.setCurrQueue(this@MusicService, false)
-                        if (queuePos != null) {
-                            player.seekTo(queuePos, dataStore.get(LastPosKey, C.TIME_UNSET))
-                            dataStore.edit { settings ->
-                                settings[LastPosKey] = C.TIME_UNSET
-                            }
-                        }
-                    }
+                    queueBoard.initialized = true
                 }
             }
         }
+    }
+
+    fun deInitQueue() {
+        if (dataStore.get(PersistentQueueKey, true)) {
+            saveQueueToDisk()
+            scope.launch {
+                dataStore.edit { settings ->
+                    settings[LastPosKey] = player.currentPosition
+                }
+            }
+        }
+        // do not replace the object. Can lead to entire queue being deleted even though it is supposed to be saved already
+        queueBoard.initialized = false
     }
 
     fun updateNotification() {
@@ -448,17 +466,6 @@ class MusicService : MediaLibraryService(),
     }
 
     private suspend fun recoverSong(mediaId: String, playbackData: YTPlayerUtils.PlaybackData? = null) {
-        val playbackUrl = database.format(mediaId).first()?.playbackUrl
-            ?: playbackData?.playbackTracking?.videostatsPlaybackUrl?.baseUrl
-            ?: YTPlayerUtils.playerResponseForMetadata(mediaId).getOrNull()?.playbackTracking?.videostatsPlaybackUrl?.baseUrl
-
-        playbackUrl?.let {
-            YouTube.registerPlayback(queuePlaylistId, playbackUrl)
-                .onFailure {
-                    reportException(it)
-                }
-        }
-
         val song = database.song(mediaId).first()
         val mediaMetadata = withContext(Dispatchers.Main) {
             player.findNextMediaItemById(mediaId)?.metadata
@@ -499,6 +506,9 @@ class MusicService : MediaLibraryService(),
      * If both are unspecified, the title will default to "Queue".
      */
     fun playQueue(queue: Queue, playWhenReady: Boolean = true, replace: Boolean = false, title: String? = null) {
+        if (!queueBoard.initialized) {
+            initQueue()
+        }
         queueTitle = title
         queuePlaylistId = queue.playlistId
 
@@ -544,18 +554,23 @@ class MusicService : MediaLibraryService(),
      * Add items to queue, right after current playing item
      */
     fun enqueueNext(items: List<MediaItem>) {
-        val currentQueue = queueBoard.getCurrentQueue()
-        if (currentQueue == null) {
+        if (!queueBoard.initialized) {
+            // when enqueuing next when player isn't active, play as a new song
             if (items.isNotEmpty()) {
-                playQueue(
-                    ListQueue(
-                        title = items.first().mediaMetadata.title.toString(),
-                        items = items.mapNotNull { it.metadata }
+                CoroutineScope(Dispatchers.Main).launch {
+                    playQueue(
+                        ListQueue(
+                            title = items.first().mediaMetadata.title.toString(),
+                            items = items.mapNotNull { it.metadata }
+                        )
                     )
-                )
+                }
             }
         } else {
-            queueBoard.addSongsToQueue(currentQueue, player.currentMediaItemIndex + 1, items.mapNotNull { it.metadata }, this)
+            // enqueue next
+            queueBoard.getCurrentQueue()?.let {
+                queueBoard.addSongsToQueue(it, player.currentMediaItemIndex + 1, items.mapNotNull { it.metadata }, this)
+            }
         }
     }
 
@@ -815,6 +830,19 @@ class MusicService : MediaLibraryService(),
                 } catch (_: SQLException) {
                 }
             }
+
+            // TODO: support playlist id
+            if (mediaItem.metadata?.isLocal != true) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    val playerResponse = YTPlayerUtils.playerResponseForMetadata(mediaItem.mediaId, null).getOrNull()
+                    if (playerResponse?.playabilityStatus?.status == "OK") {
+                        YouTube.registerPlayback(
+                            playlistId = null,
+                            playbackTracking = playerResponse.playbackTracking?.videostatsPlaybackUrl?.baseUrl!!
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -827,14 +855,7 @@ class MusicService : MediaLibraryService(),
     }
 
     override fun onDestroy() {
-        if (dataStore.get(PersistentQueueKey, true)) {
-            saveQueueToDisk()
-            scope.launch {
-                dataStore.edit { settings ->
-                    settings[LastPosKey] = player.currentPosition
-                }
-            }
-        }
+        deInitQueue()
         mediaSession.release()
         player.removeListener(this)
         player.removeListener(sleepTimer)
@@ -845,14 +866,7 @@ class MusicService : MediaLibraryService(),
     override fun onBind(intent: Intent?) = super.onBind(intent) ?: binder
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        if (dataStore.get(PersistentQueueKey, true)) {
-            saveQueueToDisk()
-            scope.launch {
-                dataStore.edit { settings ->
-                    settings[LastPosKey] = player.currentPosition
-                }
-            }
-        }
+        deInitQueue()
 
         super.onTaskRemoved(rootIntent)
     }

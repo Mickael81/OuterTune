@@ -9,6 +9,8 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.navigation.NavController
 import com.dd3boh.outertune.db.entities.Album
 import com.dd3boh.outertune.db.entities.Artist
@@ -31,6 +33,7 @@ fun LibraryArtistListItem(
 ) = ArtistListItem(
     artist = artist,
     trailingContent = {
+        val haptic = LocalHapticFeedback.current
         androidx.compose.material3.IconButton(
             onClick = {
                 menuState.show {
@@ -40,6 +43,7 @@ fun LibraryArtistListItem(
                         onDismiss = menuState::dismiss
                     )
                 }
+                haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
             }
         ) {
             Icon(
@@ -97,6 +101,7 @@ fun LibraryAlbumListItem(
     isActive = isActive,
     isPlaying = isPlaying,
     trailingContent = {
+        val haptic = LocalHapticFeedback.current
         androidx.compose.material3.IconButton(
             onClick = {
                 menuState.show {
@@ -106,6 +111,7 @@ fun LibraryAlbumListItem(
                         onDismiss = menuState::dismiss
                     )
                 }
+                haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
             }
         ) {
             Icon(
@@ -165,6 +171,7 @@ fun LibraryPlaylistListItem(
 ) = PlaylistListItem(
     playlist = playlist,
     trailingContent = {
+        val haptic = LocalHapticFeedback.current
         androidx.compose.material3.IconButton(
             onClick = {
                 menuState.show {
@@ -182,7 +189,7 @@ fun LibraryPlaylistListItem(
                                     title = playlist.playlist.name,
                                     author = null,
                                     songCountText = null,
-                                    thumbnail = playlist.thumbnails[0],
+                                    thumbnail = playlist.thumbnails.getOrNull(0),
                                     playEndpoint = WatchEndpoint(
                                         playlistId = browseId,
                                         params = playlist.playlist.playEndpointParams
@@ -203,6 +210,7 @@ fun LibraryPlaylistListItem(
                         }
                     }
                 }
+                haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
             }
         ) {
             Icon(
@@ -257,7 +265,7 @@ fun LibraryPlaylistGridItem(
                                     title = playlist.playlist.name,
                                     author = null,
                                     songCountText = null,
-                                    thumbnail = playlist.thumbnails[0],
+                                    thumbnail = playlist.thumbnails.getOrNull(0),
                                     playEndpoint = WatchEndpoint(
                                         playlistId = browseId,
                                         params = playlist.playlist.playEndpointParams
